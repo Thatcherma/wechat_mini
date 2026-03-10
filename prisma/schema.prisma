@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 菜品分类
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String?  // 分类图标
+  sort      Int      @default(0) // 排序
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 菜品
+model Dish {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float    // 价格
+  image       String?  // 菜品图片
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  available   Boolean  @default(true) // 是否可点
+  recommend   Boolean  @default(false) // 是否推荐
+  spicy       Int      @default(0) // 辣度 0-3
+  sort        Int      @default(0)
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 订单
+model Order {
+  id          String      @id @default(cuid())
+  orderNo     String      @unique // 订单号
+  tableNo     String?     // 桌号
+  customerName String?    // 顾客姓名
+  phone       String?     // 联系电话
+  remark      String?     // 备注
+  status      OrderStatus @default(PENDING) // 订单状态
+  totalAmount Float       // 总金额
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// 订单项
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dishId    String
+  dish      Dish     @relation(fields: [dishId], references: [id])
+  quantity  Int      // 数量
+  price     Float    // 下单时的价格
+  remark    String?  // 单项备注
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING    // 待处理
+  CONFIRMED  // 已确认
+  PREPARING  // 制作中
+  READY      // 已完成
+  SERVED     // 已上菜
+  CANCELLED  // 已取消
+}
